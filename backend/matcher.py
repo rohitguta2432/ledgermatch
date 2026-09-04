@@ -34,7 +34,8 @@ def _dates_close(a: str, b: str, days: int = DATE_WINDOW_DAYS) -> bool:
     return abs(da - db) <= timedelta(days=days)
 
 
-def reconcile(orders: list[dict], payments: list[dict]) -> dict:
+def reconcile(orders: list[dict], payments: list[dict], emit=None) -> dict:
+    _e = emit or (lambda kind, **fields: None)
     charges = [p for p in payments if p["kind"] == "charge"]
     refunds = [p for p in payments if p["kind"] == "refund"]
 
@@ -65,6 +66,8 @@ def reconcile(orders: list[dict], payments: list[dict]) -> dict:
         matched_order_ids.add(order["order_id"])
         matched_payment_keys.add(payment_key(payment))
 
+    _e("pass", name="ref", matched=len(matches))
+
     # Pass 2: exact amount + close date
     for payment in charges:
         if payment_key(payment) in matched_payment_keys:
@@ -86,6 +89,8 @@ def reconcile(orders: list[dict], payments: list[dict]) -> dict:
             matched_order_ids.add(order["order_id"])
             matched_payment_keys.add(payment_key(payment))
 
+    _e("pass", name="exact", matched=len(matches))
+
     # Pass 3: amount within tolerance (currency rounding drift)
     for payment in charges:
         if payment_key(payment) in matched_payment_keys:
@@ -106,6 +111,8 @@ def reconcile(orders: list[dict], payments: list[dict]) -> dict:
             })
             matched_order_ids.add(order["order_id"])
             matched_payment_keys.add(payment_key(payment))
+
+    _e("pass", name="fuzzy", matched=len(matches))
 
     # Refunds: link to a matched charge by ref or amount
     unlinked_refunds = []
@@ -197,6 +204,8 @@ def reconcile(orders: list[dict], payments: list[dict]) -> dict:
     total_at_risk = round(
         sum(e["amount"] for e in exceptions if e["type"] in ("missing_payment", "amount_mismatch")), 2
     )
+
+    _e("orders_done", orders=len(orders), matched=len(matches), exceptions=len(exceptions), at_risk=total_at_risk)
 
     return {
         "summary": {

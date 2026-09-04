@@ -26,6 +26,8 @@ import io
 import re
 from datetime import datetime
 
+from payouts import source_hint
+
 
 def _to_float(value: str) -> float:
     if value is None:
@@ -215,20 +217,65 @@ def parse_orders(csv_text: str) -> list[dict]:
     return [o for o in orders if o["order_id"]]
 
 
+def parse_bank(csv_text: str) -> list[dict]:
+    """Bank statement export: one line per credit or debit.
+
+    Normalized bank line shape:
+        {
+            "id": str,            # statement reference, or a stable row number
+            "date": str,          # ISO date
+            "description": str,
+            "amount": float,      # credits positive, debits negative
+            "balance": float | None,
+            "source_hint": str,   # stripe | square | paypal | '' (from the description)
+        }
+    """
+    rows, headers = _rows(csv_text)
+    col_date = _find_column(headers, "date", "posted", "transaction date")
+    col_desc = _find_column(headers, "description", "memo", "details", "narrative", "payee")
+    col_amount = _find_column(headers, "amount")
+    col_credit = _find_column(headers, "credit", "deposit", "money in", "paid in")
+    col_debit = _find_column(headers, "debit", "withdrawal", "money out", "paid out")
+    col_balance = _find_column(headers, "balance")
+    col_id = _find_column(headers, "reference", "transaction id", "ref")
+
+    lines = []
+    for i, row in enumerate(rows, start=1):
+        if col_amount:
+            amount = _to_float(row.get(col_amount, "0"))
+        else:
+            credit = _to_float(row.get(col_credit, "0")) if col_credit else 0.0
+            debit = abs(_to_float(row.get(col_debit, "0"))) if col_debit else 0.0
+            amount = credit - debit
+        description = (row.get(col_desc, "") or "").strip() if col_desc else ""
+        line_id = (row.get(col_id, "") or "").strip() if col_id else ""
+        raw_balance = row.get(col_balance, "") if col_balance else ""
+        lines.append({
+            "id": line_id or f"bank-{i:04d}",
+            "date": _to_iso_date(row.get(col_date, "")),
+            "description": description,
+            "amount": round(amount, 2),
+            "balance": _to_float(raw_balance) if raw_balance not in (None, "") else None,
+            "source_hint": source_hint(description),
+        })
+    return lines
+
+
 PARSERS = {
     "stripe": parse_stripe,
     "square": parse_square,
     "paypal": parse_paypal,
     "orders": parse_orders,
+    "bank": parse_bank,
 }
 
 
 def detect_source(filename: str, csv_text: str) -> str | None:
     """Guess the source from filename, then headers."""
     name = (filename or "").lower()
-    for source in ("stripe", "square", "paypal", "order"):
+    for source in ("stripe", "square", "paypal", "order", "bank", "statement"):
         if source in name:
-            return "orders" if source == "order" else source
+            return {"order": "orders", "statement": "bank"}.get(source, source)
     header_line = csv_text.splitlines()[0].lower() if csv_text else ""
     if "balance transaction" in header_line or "converted amount" in header_line:
         return "stripe"
@@ -236,6 +283,12 @@ def detect_source(filename: str, csv_text: str) -> str | None:
         return "square"
     if "invoice number" in header_line or ("gross" in header_line and "name" in header_line):
         return "paypal"
+    looks_like_money = any(w in header_line for w in ("amount", "credit", "debit", "deposit"))
+    has_processor_columns = "gross" in header_line or "fee" in header_line
+    if "balance" in header_line or (
+        ("description" in header_line or "memo" in header_line) and looks_like_money and not has_processor_columns
+    ):
+        return "bank"
     if "order" in header_line or "customer" in header_line:
         return "orders"
     return None

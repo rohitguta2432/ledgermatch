@@ -1,0 +1,83 @@
+{"t": 0.001, "kind": "run_start", "files": ["orders.csv", "stripe.csv", "square.csv", "paypal.csv", "bank.csv"]}
+{"t": 1.549, "kind": "load", "file": "orders.csv", "source": "orders", "rows": 48}
+{"t": 1.673, "kind": "load", "file": "stripe.csv", "source": "stripe", "rows": 20}
+{"t": 1.769, "kind": "load", "file": "square.csv", "source": "square", "rows": 14}
+{"t": 1.874, "kind": "load", "file": "paypal.csv", "source": "paypal", "rows": 14}
+{"t": 2.114, "kind": "load", "file": "bank.csv", "source": "bank", "rows": 39}
+{"t": 2.136, "kind": "pass", "name": "ref", "matched": 40}
+{"t": 2.156, "kind": "pass", "name": "exact", "matched": 46}
+{"t": 2.16, "kind": "pass", "name": "fuzzy", "matched": 46}
+{"t": 2.2, "kind": "orders_done", "orders": 48, "matched": 46, "exceptions": 5, "at_risk": 764.84}
+{"t": 2.204, "kind": "payouts_start", "payments": 48}
+{"t": 2.242, "kind": "payout", "source": "paypal", "date": "2026-07-15", "charges": 2, "refunds": 0, "gross": 388.33, "fees": 14.53, "net": 373.8}
+{"t": 2.246, "kind": "payout", "source": "paypal", "date": "2026-07-18", "charges": 2, "refunds": 0, "gross": 429.9, "fees": 15.99, "net": 413.91}
+{"t": 2.249, "kind": "payout", "source": "paypal", "date": "2026-07-19", "charges": 1, "refunds": 0, "gross": 129.94, "fees": 5.02, "net": 124.92}
+{"t": 2.25, "kind": "payout", "source": "paypal", "date": "2026-07-21", "charges": 1, "refunds": 0, "gross": 228.46, "fees": 8.46, "net": 220.0}
+{"t": 2.252, "kind": "payout", "source": "paypal", "date": "2026-07-24", "charges": 1, "refunds": 0, "gross": 23.7, "fees": 1.32, "net": 22.38}
+{"t": 2.254, "kind": "payout", "source": "paypal", "date": "2026-07-26", "charges": 1, "refunds": 0, "gross": 380.61, "fees": 13.77, "net": 366.84}
+{"t": 2.256, "kind": "payout", "source": "paypal", "date": "2026-07-27", "charges": 1, "refunds": 0, "gross": 328.76, "fees": 11.96, "net": 316.8}
+{"t": 2.257, "kind": "payout", "source": "paypal", "date": "2026-07-29", "charges": 1, "refunds": 0, "gross": 89.63, "fees": 3.62, "net": 86.01}
+{"t": 2.259, "kind": "payout", "source": "paypal", "date": "2026-07-30", "charges": 2, "refunds": 0, "gross": 620.52, "fees": 22.64, "net": 597.88}
+{"t": 2.262, "kind": "payout", "source": "paypal", "date": "2026-07-31", "charges": 0, "refunds": 1, "gross": 0, "fees": 0, "net": -64.0}
+{"t": 2.264, "kind": "payout", "source": "paypal", "date": "2026-08-04", "charges": 1, "refunds": 0, "gross": 240.52, "fees": 8.88, "net": 231.64}
+{"t": 2.265, "kind": "payout", "source": "square", "date": "2026-07-20", "charges": 1, "refunds": 0, "gross": 315.12, "fees": 8.29, "net": 306.83}
+{"t": 2.267, "kind": "payout", "source": "square", "date": "2026-07-21", "charges": 1, "refunds": 0, "gross": 405.51, "fees": 10.64, "net": 394.87}
+{"t": 2.269, "kind": "payout", "source": "square", "date": "2026-07-22", "charges": 1, "refunds": 0, "gross": 374.37, "fees": 9.83, "net": 364.54}
+{"t": 2.27, "kind": "payout", "source": "square", "date": "2026-07-24", "charges": 2, "refunds": 0, "gross": 688.49, "fees": 18.1, "net": 670.39}
+{"t": 2.272, "kind": "payout", "source": "square", "date": "2026-07-25", "charges": 2, "refunds": 0, "gross": 247.64, "fees": 6.64, "net": 241.0}
+{"t": 2.274, "kind": "payout", "source": "square", "date": "2026-07-27", "charges": 2, "refunds": 0, "gross": 559.05, "fees": 14.74, "net": 544.31}
+{"t": 2.276, "kind": "payout", "source": "square", "date": "2026-07-30", "charges": 1, "refunds": 0, "gross": 408.84, "fees": 10.73, "net": 398.11}
+{"t": 2.277, "kind": "payout", "source": "square", "date": "2026-08-01", "charges": 1, "refunds": 0, "gross": 20.48, "fees": 0.63, "net": 19.85}
+{"t": 2.28, "kind": "payout", "source": "square", "date": "2026-08-04", "charges": 1, "refunds": 0, "gross": 291.19, "fees": 7.67, "net": 283.52}
+{"t": 2.282, "kind": "payout", "source": "square", "date": "2026-08-05", "charges": 1, "refunds": 0, "gross": 60.37, "fees": 1.67, "net": 58.7}
+{"t": 2.284, "kind": "payout", "source": "square", "date": "2026-08-06", "charges": 1, "refunds": 0, "gross": 169.36, "fees": 4.5, "net": 164.86}
+{"t": 2.286, "kind": "payout", "source": "stripe", "date": "2026-07-18", "charges": 1, "refunds": 0, "gross": 67.95, "fees": 2.27, "net": 65.68}
+{"t": 2.288, "kind": "payout", "source": "stripe", "date": "2026-07-20", "charges": 2, "refunds": 0, "gross": 648.46, "fees": 19.4, "net": 629.06}
+{"t": 2.289, "kind": "payout", "source": "stripe", "date": "2026-07-21", "charges": 2, "refunds": 0, "gross": 410.78, "fees": 12.51, "net": 398.27}
+{"t": 2.291, "kind": "payout", "source": "stripe", "date": "2026-07-22", "charges": 1, "refunds": 0, "gross": 126.73, "fees": 3.98, "net": 122.75}
+{"t": 2.293, "kind": "payout", "source": "stripe", "date": "2026-07-25", "charges": 2, "refunds": 0, "gross": 573.45, "fees": 17.23, "net": 556.22}
+{"t": 2.294, "kind": "payout", "source": "stripe", "date": "2026-07-27", "charges": 1, "refunds": 0, "gross": 70.93, "fees": 2.36, "net": 68.57}
+{"t": 2.296, "kind": "payout", "source": "stripe", "date": "2026-07-28", "charges": 1, "refunds": 0, "gross": 374.16, "fees": 11.15, "net": 363.01}
+{"t": 2.298, "kind": "payout", "source": "stripe", "date": "2026-07-29", "charges": 1, "refunds": 0, "gross": 50.2, "fees": 1.76, "net": 48.44}
+{"t": 2.3, "kind": "payout", "source": "stripe", "date": "2026-08-03", "charges": 2, "refunds": 0, "gross": 168.67, "fees": 5.49, "net": 163.18}
+{"t": 2.301, "kind": "payout", "source": "stripe", "date": "2026-08-04", "charges": 2, "refunds": 0, "gross": 405.51, "fees": 12.36, "net": 393.15}
+{"t": 2.303, "kind": "payout", "source": "stripe", "date": "2026-08-05", "charges": 2, "refunds": 0, "gross": 436.38, "fees": 13.26, "net": 423.12}
+{"t": 2.305, "kind": "payout", "source": "stripe", "date": "2026-08-06", "charges": 1, "refunds": 0, "gross": 248.67, "fees": 7.51, "net": 241.16}
+{"t": 2.306, "kind": "payout", "source": "stripe", "date": "2026-08-07", "charges": 1, "refunds": 0, "gross": 224.98, "fees": 6.82, "net": 218.16}
+{"t": 2.308, "kind": "payout", "source": "stripe", "date": "2026-08-08", "charges": 1, "refunds": 0, "gross": 344.73, "fees": 10.3, "net": 334.43}
+{"t": 2.312, "kind": "bank", "lines": 39, "credits": 35, "processor_credits": 33}
+{"t": 2.325, "kind": "landed", "source": "paypal", "date": "2026-07-15", "net": 373.8, "bank_id": "bank-0001", "bank_date": "2026-07-15", "description": "PAYPAL TRANSFER"}
+{"t": 2.334, "kind": "landed", "source": "paypal", "date": "2026-07-18", "net": 413.91, "bank_id": "bank-0003", "bank_date": "2026-07-18", "description": "PAYPAL TRANSFER"}
+{"t": 2.341, "kind": "landed", "source": "paypal", "date": "2026-07-19", "net": 124.92, "bank_id": "bank-0006", "bank_date": "2026-07-19", "description": "PAYPAL TRANSFER"}
+{"t": 2.348, "kind": "landed", "source": "paypal", "date": "2026-07-21", "net": 220.0, "bank_id": "bank-0008", "bank_date": "2026-07-21", "description": "PAYPAL TRANSFER"}
+{"t": 2.354, "kind": "landed", "source": "paypal", "date": "2026-07-24", "net": 22.38, "bank_id": "bank-0013", "bank_date": "2026-07-24", "description": "PAYPAL TRANSFER"}
+{"t": 2.359, "kind": "landed", "source": "paypal", "date": "2026-07-26", "net": 366.84, "bank_id": "bank-0017", "bank_date": "2026-07-26", "description": "PAYPAL TRANSFER"}
+{"t": 2.364, "kind": "landed", "source": "paypal", "date": "2026-07-27", "net": 316.8, "bank_id": "bank-0019", "bank_date": "2026-07-27", "description": "PAYPAL TRANSFER"}
+{"t": 2.369, "kind": "landed", "source": "paypal", "date": "2026-07-29", "net": 86.01, "bank_id": "bank-0023", "bank_date": "2026-07-29", "description": "PAYPAL TRANSFER"}
+{"t": 2.373, "kind": "landed", "source": "paypal", "date": "2026-07-30", "net": 597.88, "bank_id": "bank-0025", "bank_date": "2026-07-30", "description": "PAYPAL TRANSFER"}
+{"t": 2.376, "kind": "landed", "source": "paypal", "date": "2026-08-04", "net": 231.64, "bank_id": "bank-0030", "bank_date": "2026-08-04", "description": "PAYPAL TRANSFER"}
+{"t": 2.384, "kind": "landed", "source": "square", "date": "2026-07-20", "net": 306.83, "bank_id": "bank-0007", "bank_date": "2026-07-20", "description": "SQUARE INC DES:DEPOSIT ID:888721985"}
+{"t": 2.391, "kind": "landed", "source": "square", "date": "2026-07-21", "net": 394.87, "bank_id": "bank-0009", "bank_date": "2026-07-21", "description": "SQUARE INC DES:DEPOSIT ID:955092611"}
+{"t": 2.397, "kind": "landed", "source": "square", "date": "2026-07-22", "net": 364.54, "bank_id": "bank-0010", "bank_date": "2026-07-22", "description": "SQUARE INC DES:DEPOSIT ID:440210868"}
+{"t": 2.408, "kind": "landed", "source": "square", "date": "2026-07-25", "net": 241.0, "bank_id": "bank-0015", "bank_date": "2026-07-25", "description": "SQUARE INC DES:DEPOSIT ID:615546528"}
+{"t": 2.414, "kind": "landed", "source": "square", "date": "2026-07-27", "net": 544.31, "bank_id": "bank-0020", "bank_date": "2026-07-27", "description": "SQUARE INC DES:DEPOSIT ID:914191215"}
+{"t": 2.42, "kind": "landed", "source": "square", "date": "2026-07-30", "net": 398.11, "bank_id": "bank-0026", "bank_date": "2026-07-30", "description": "SQUARE INC DES:DEPOSIT ID:145000248"}
+{"t": 2.425, "kind": "landed", "source": "square", "date": "2026-08-01", "net": 19.85, "bank_id": "bank-0028", "bank_date": "2026-08-01", "description": "SQUARE INC DES:DEPOSIT ID:368391960"}
+{"t": 2.429, "kind": "landed", "source": "square", "date": "2026-08-04", "net": 283.52, "bank_id": "bank-0031", "bank_date": "2026-08-04", "description": "SQUARE INC DES:DEPOSIT ID:030966772"}
+{"t": 2.434, "kind": "landed", "source": "square", "date": "2026-08-05", "net": 58.7, "bank_id": "bank-0034", "bank_date": "2026-08-05", "description": "SQUARE INC DES:DEPOSIT ID:302697083"}
+{"t": 2.438, "kind": "landed", "source": "square", "date": "2026-08-06", "net": 164.86, "bank_id": "bank-0036", "bank_date": "2026-08-06", "description": "SQUARE INC DES:DEPOSIT ID:689944976"}
+{"t": 2.445, "kind": "landed", "source": "stripe", "date": "2026-07-18", "net": 65.68, "bank_id": "bank-0004", "bank_date": "2026-07-18", "description": "STRIPE TRANSFER ST-068647"}
+{"t": 2.469, "kind": "landed", "source": "stripe", "date": "2026-07-25", "net": 556.22, "bank_id": "bank-0016", "bank_date": "2026-07-25", "description": "STRIPE TRANSFER ST-198356"}
+{"t": 2.476, "kind": "landed", "source": "stripe", "date": "2026-07-27", "net": 68.57, "bank_id": "bank-0021", "bank_date": "2026-07-27", "description": "STRIPE TRANSFER ST-611225"}
+{"t": 2.481, "kind": "landed", "source": "stripe", "date": "2026-07-28", "net": 363.01, "bank_id": "bank-0022", "bank_date": "2026-07-28", "description": "STRIPE TRANSFER ST-155161"}
+{"t": 2.487, "kind": "landed", "source": "stripe", "date": "2026-07-29", "net": 48.44, "bank_id": "bank-0024", "bank_date": "2026-07-29", "description": "STRIPE TRANSFER ST-789006"}
+{"t": 2.492, "kind": "landed", "source": "stripe", "date": "2026-08-03", "net": 163.18, "bank_id": "bank-0029", "bank_date": "2026-08-03", "description": "STRIPE TRANSFER ST-988633"}
+{"t": 2.497, "kind": "landed", "source": "stripe", "date": "2026-08-04", "net": 393.15, "bank_id": "bank-0032", "bank_date": "2026-08-04", "description": "STRIPE TRANSFER ST-918211"}
+{"t": 2.502, "kind": "landed", "source": "stripe", "date": "2026-08-05", "net": 423.12, "bank_id": "bank-0035", "bank_date": "2026-08-05", "description": "STRIPE TRANSFER ST-767195"}
+{"t": 2.506, "kind": "landed", "source": "stripe", "date": "2026-08-06", "net": 241.16, "bank_id": "bank-0037", "bank_date": "2026-08-06", "description": "STRIPE TRANSFER ST-307371"}
+{"t": 2.51, "kind": "landed", "source": "stripe", "date": "2026-08-07", "net": 218.16, "bank_id": "bank-0038", "bank_date": "2026-08-07", "description": "STRIPE TRANSFER ST-811956"}
+{"t": 2.513, "kind": "landed", "source": "stripe", "date": "2026-08-08", "net": 334.43, "bank_id": "bank-0039", "bank_date": "2026-08-08", "description": "STRIPE TRANSFER ST-490405"}
+{"t": 2.523, "kind": "combined", "source": "stripe", "dates": ["2026-07-21", "2026-07-22"], "nets": [398.27, 122.75], "bank_id": "bank-0011", "bank_date": "2026-07-22", "amount": 521.02, "description": "STRIPE TRANSFER ST-623232"}
+{"t": 2.531, "kind": "short", "source": "square", "date": "2026-07-24", "net": 670.39, "amount": 625.39, "delta": -45.0, "bank_id": "bank-0014", "bank_date": "2026-07-24", "description": "SQUARE INC DES:DEPOSIT ID:044443110"}
+{"t": 2.535, "kind": "missing", "source": "stripe", "date": "2026-07-20", "net": 629.06, "charges": 2}
+{"t": 2.566, "kind": "run_end", "payouts_expected": 35, "payouts_landed": 33, "payouts_short": 1, "payouts_missing": 1, "bank_lines": 39, "bank_credits": 35, "bank_unexplained": 0, "cash_gap": 674.06}

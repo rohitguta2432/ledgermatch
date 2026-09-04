@@ -41,6 +41,22 @@ type Exception = {
   amount: number;
 };
 
+type Payout = {
+  id: string;
+  source: string;
+  date: string;
+  charges: number;
+  refunds: number;
+  gross: number;
+  fees: number;
+  refunded: number;
+  net: number;
+  status: "expected" | "nothing_due" | "landed" | "short" | "over" | "missing";
+  bank: { id: string; date: string; description: string; amount: number } | null;
+  delta: number;
+  combined_with?: string[];
+};
+
 type Report = {
   summary: {
     orders_total: number;
@@ -53,9 +69,17 @@ type Report = {
     fees_by_source: Record<string, number>;
     gross_by_source: Record<string, number>;
     total_at_risk: number;
+    payouts_expected?: number;
+    payouts_landed?: number;
+    payouts_short?: number;
+    payouts_missing?: number;
+    bank_credits?: number;
+    bank_unexplained?: number;
+    cash_gap?: number;
   };
   matches: Match[];
   exceptions: Exception[];
+  payouts?: Payout[];
   files: { filename: string; source: string; rows: number }[];
 };
 
@@ -64,6 +88,7 @@ const SOURCE_STYLES: Record<string, string> = {
   square: "bg-slate-100 text-slate-700 border-slate-300",
   paypal: "bg-sky-50 text-sky-700 border-sky-200",
   orders: "bg-amber-50 text-amber-700 border-amber-200",
+  bank: "bg-emerald-50 text-emerald-700 border-emerald-200",
 };
 
 const EXCEPTION_LABELS: Record<string, string> = {
@@ -71,6 +96,19 @@ const EXCEPTION_LABELS: Record<string, string> = {
   orphan_payment: "Orphan payment",
   amount_mismatch: "Amount mismatch",
   unlinked_refund: "Unlinked refund",
+  payout_missing: "Payout never arrived",
+  payout_short: "Payout landed short",
+  payout_over: "Payout landed over",
+  unexplained_deposit: "Unexplained deposit",
+};
+
+const PAYOUT_STATUS: Record<Payout["status"], { label: string; cls: string }> = {
+  landed: { label: "landed ✓", cls: "bg-emerald-50 text-emerald-700 border-emerald-200" },
+  short: { label: "landed short", cls: "bg-amber-50 text-amber-700 border-amber-200" },
+  over: { label: "landed over", cls: "bg-amber-50 text-amber-700 border-amber-200" },
+  missing: { label: "never arrived", cls: "bg-red-50 text-red-700 border-red-200" },
+  expected: { label: "expected", cls: "bg-slate-100 text-slate-600 border-slate-200" },
+  nothing_due: { label: "nothing due", cls: "bg-slate-100 text-slate-500 border-slate-200" },
 };
 
 function money(n: number) {
@@ -136,6 +174,8 @@ export default function Home() {
 
   const summary = report?.summary;
   const hasData = !!summary && (summary.orders_total > 0 || summary.payments_total > 0);
+  const payouts = (report?.payouts ?? []).filter((p) => p.status !== "nothing_due");
+  const hasPayouts = payouts.length > 0;
 
   return (
     <div className="min-h-screen">
@@ -180,9 +220,9 @@ export default function Home() {
               <span className="text-emerald-600">Your orders are not.</span>
             </h1>
             <p className="mx-auto mt-4 max-w-xl text-lg text-slate-600">
-              Drop your Stripe, Square and PayPal exports next to your order list. LedgerMatch
-              matches every order to its payment, totals the fees, and shows you exactly which
-              money never arrived.
+              Drop your Stripe, Square and PayPal exports next to your order list, plus your bank
+              statement. LedgerMatch matches every order to its payment, rebuilds every payout, and
+              shows you exactly which money never reached the bank.
             </p>
 
             <div
@@ -210,7 +250,7 @@ export default function Home() {
                 onChange={(e) => e.target.files && uploadFiles(e.target.files)}
               />
               <p className="text-lg font-medium text-slate-700">
-                Drop CSVs here — orders + any of Stripe / Square / PayPal
+                Drop CSVs here — orders + Stripe / Square / PayPal + your bank statement
               </p>
               <p className="mt-1 text-sm text-slate-500">
                 Files never leave your machine. The backend runs on localhost.
@@ -225,7 +265,7 @@ export default function Home() {
               >
                 {loading ? "Reconciling…" : "Load demo data"}
               </button>
-              <span className="text-sm text-slate-500">48 orders · 3 processors · 1 click</span>
+              <span className="text-sm text-slate-500">48 orders · 3 processors · 1 bank statement · 1 click</span>
             </div>
 
             {error && (
@@ -238,7 +278,7 @@ export default function Home() {
 
         {hasData && summary && report && (
           <>
-            <section className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+            <section className={`grid grid-cols-2 gap-4 ${hasPayouts ? "lg:grid-cols-5" : "lg:grid-cols-4"}`}>
               <StatCard
                 label="Match rate"
                 value={`${summary.match_rate}%`}
@@ -251,6 +291,14 @@ export default function Home() {
                 sub={`${summary.exceptions} exceptions to review`}
                 tone={summary.total_at_risk > 0 ? "red" : "emerald"}
               />
+              {hasPayouts && (
+                <StatCard
+                  label="Cash gap"
+                  value={money(summary.cash_gap ?? 0)}
+                  sub={`${summary.payouts_landed} of ${summary.payouts_expected} payouts landed in the bank`}
+                  tone={(summary.cash_gap ?? 0) > 0 ? "red" : "emerald"}
+                />
+              )}
               <StatCard
                 label="Processor fees"
                 value={money(summary.total_fees)}
@@ -309,6 +357,84 @@ export default function Home() {
                       </div>
                     </div>
                   ))}
+                </div>
+              </section>
+            )}
+
+            {hasPayouts && (
+              <section className="mt-8">
+                <h2 className="text-lg font-semibold text-slate-900">
+                  Payouts → bank
+                  <span className="ml-2 text-sm font-normal text-slate-500">
+                    every processor payout, rebuilt from its charges and checked against your statement
+                  </span>
+                </h2>
+                <div className="mt-3 overflow-x-auto rounded-xl border border-slate-200 bg-white">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-500">
+                        <th className="px-4 py-3">Processor</th>
+                        <th className="px-4 py-3">Settles</th>
+                        <th className="px-4 py-3 text-right">Charges</th>
+                        <th className="px-4 py-3 text-right">Gross</th>
+                        <th className="px-4 py-3 text-right">Fees</th>
+                        <th className="px-4 py-3 text-right">Net expected</th>
+                        <th className="px-4 py-3">Bank statement</th>
+                        <th className="px-4 py-3">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {payouts.map((p) => (
+                        <tr
+                          key={p.id}
+                          className={`border-b border-slate-100 last:border-0 ${
+                            p.status === "missing" ? "bg-red-50/60" : p.status === "short" ? "bg-amber-50/60" : "hover:bg-slate-50"
+                          }`}
+                        >
+                          <td className="px-4 py-2.5">
+                            <span
+                              className={`rounded-md border px-2 py-0.5 text-xs font-medium ${
+                                SOURCE_STYLES[p.source] ?? SOURCE_STYLES.orders
+                              }`}
+                            >
+                              {p.source}
+                            </span>
+                          </td>
+                          <td className="px-4 py-2.5 text-slate-600">{p.date}</td>
+                          <td className="px-4 py-2.5 text-right text-slate-600">
+                            {p.charges}
+                            {p.refunds ? ` − ${p.refunds} refund` : ""}
+                          </td>
+                          <td className="px-4 py-2.5 text-right font-mono">{money(p.gross)}</td>
+                          <td className="px-4 py-2.5 text-right font-mono text-slate-500">−{money(p.fees)}</td>
+                          <td className="px-4 py-2.5 text-right font-mono font-medium">{money(p.net)}</td>
+                          <td className="px-4 py-2.5 text-slate-600">
+                            {p.bank ? (
+                              <>
+                                <span className="font-mono">{money(p.bank.amount)}</span>
+                                <span className="ml-2 text-xs text-slate-400">
+                                  {p.bank.date} · {p.bank.description}
+                                  {p.combined_with?.length ? " · combined transfer" : ""}
+                                </span>
+                              </>
+                            ) : (
+                              <span className="text-slate-400">—</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-2.5">
+                            <span
+                              className={`whitespace-nowrap rounded-md border px-2 py-0.5 text-xs font-medium ${
+                                PAYOUT_STATUS[p.status].cls
+                              }`}
+                            >
+                              {PAYOUT_STATUS[p.status].label}
+                              {p.status === "short" ? ` ${money(p.delta)}` : ""}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               </section>
             )}

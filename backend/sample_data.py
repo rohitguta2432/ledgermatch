@@ -6,6 +6,10 @@ Plants known exceptions:
   - 1 Stripe payment with an amount mismatch vs its order
   - 1 orphan Square payment with no order
   - 1 unlinked PayPal refund
+And in the bank statement:
+  - the biggest Stripe payout never arrives
+  - the biggest Square payout lands $45.00 short (reserve hold)
+  - two consecutive Stripe payouts arrive as one combined transfer
 """
 
 from __future__ import annotations
@@ -63,6 +67,7 @@ def generate() -> dict[str, str]:
     mismatch_id = orders[14]["order_id"]
 
     stripe_rows, square_rows, paypal_rows = [], [], []
+    ledger: list[tuple[str, date, float, float, str]] = []  # (source, paid_on, gross, fee, kind)
     for order in orders:
         if order["order_id"] in missing_payment_ids:
             continue
@@ -71,6 +76,8 @@ def generate() -> dict[str, str]:
         if order["order_id"] == mismatch_id:
             amount = round(amount - 18.00, 2)  # partial capture — mismatch
 
+        fee = {"stripe": _stripe_fee, "square": _square_fee, "paypal": _paypal_fee}[order["source"]](amount)
+        ledger.append((order["source"], pay_date, amount, fee, "charge"))
         if order["source"] == "stripe":
             stripe_rows.append({
                 "id": f"ch_{rng.randrange(10**14):014x}",
@@ -103,6 +110,7 @@ def generate() -> dict[str, str]:
             })
 
     # Orphan Square payment (no order behind it)
+    ledger.append(("square", BASE_DATE + timedelta(days=9), 87.50, _square_fee(87.50), "charge"))
     square_rows.append({
         "Transaction ID": f"sq_{rng.randrange(10**12):012d}",
         "Date": str(BASE_DATE + timedelta(days=9)),
@@ -113,6 +121,7 @@ def generate() -> dict[str, str]:
     })
 
     # Unlinked PayPal refund
+    ledger.append(("paypal", BASE_DATE + timedelta(days=16), -64.00, 0.0, "refund"))
     paypal_rows.append({
         "Date": str(BASE_DATE + timedelta(days=16)),
         "Name": "Chris Doyle",
@@ -123,6 +132,68 @@ def generate() -> dict[str, str]:
         "Transaction ID": f"pp_{rng.randrange(10**13):013d}",
         "Invoice Number": "",
     })
+
+    # Bank statement: what the processors actually deposited, plus the usual noise.
+    # Settlement lag mirrors payouts.SETTLEMENT_LAG_DAYS (stripe 2, square 1, paypal 0).
+    lag = {"stripe": 2, "square": 1, "paypal": 0}
+    settle: dict[tuple[str, date], float] = {}
+    for source, paid_on, gross, fee, kind in ledger:
+        key = (source, paid_on + timedelta(days=lag[source]))
+        net = gross - fee if kind == "charge" else gross + fee
+        settle[key] = round(settle.get(key, 0.0) + net, 2)
+    deposits = sorted(settle.items())
+    stripe_days = [key for key, _ in deposits if key[0] == "stripe"]
+    square_days = [key for key, _ in deposits if key[0] == "square"]
+
+    missing_key = max(stripe_days, key=lambda k: settle[k])
+    short_key = max(square_days, key=lambda k: settle[k])
+    combine_keys: tuple = ()
+    for first, second in zip(stripe_days, stripe_days[1:]):
+        gap = (second[1] - first[1]).days
+        if missing_key not in (first, second) and 0 < gap <= 3:
+            combine_keys = (first, second)
+            break
+
+    bank_rows: list[dict] = []
+    skip: set[tuple[str, date]] = set()
+    for (source, day), net in deposits:
+        if (source, day) in skip or net <= 0 or (source, day) == missing_key:
+            continue
+        amount = net
+        if (source, day) == short_key:
+            amount = round(net - 45.00, 2)
+        if combine_keys and (source, day) == combine_keys[0]:
+            amount = round(net + settle[combine_keys[1]], 2)
+            skip.add(combine_keys[1])
+            day = combine_keys[1][1]
+        description = {
+            "stripe": f"STRIPE TRANSFER ST-{rng.randrange(10**6):06d}",
+            "square": f"SQUARE INC DES:DEPOSIT ID:{rng.randrange(10**9):09d}",
+            "paypal": "PAYPAL TRANSFER",
+        }[source]
+        bank_rows.append({"date": day, "description": description, "amount": amount})
+
+    for offset, description, amount in (
+        (1, "GUSTO PAYROLL 260716", -4250.00),
+        (3, "WEWORK RENT AUG", -1800.00),
+        (8, "ZELLE FROM J DOYLE", 250.00),
+        (12, "AMEX EPAYMENT", -912.44),
+        (17, "SHOPIFY BILL", -79.00),
+        (21, "INTEREST PAID", 0.42),
+    ):
+        bank_rows.append({"date": BASE_DATE + timedelta(days=offset), "description": description, "amount": amount})
+
+    bank_rows.sort(key=lambda r: (r["date"], r["description"]))
+    balance = 12480.15
+    bank_csv_rows = []
+    for row in bank_rows:
+        balance = round(balance + row["amount"], 2)
+        bank_csv_rows.append({
+            "Date": str(row["date"]),
+            "Description": row["description"],
+            "Amount": f"{row['amount']:.2f}",
+            "Balance": f"{balance:.2f}",
+        })
 
     def to_csv(rows: list[dict]) -> str:
         if not rows:
@@ -149,6 +220,7 @@ def generate() -> dict[str, str]:
         "stripe": to_csv(stripe_rows),
         "square": to_csv(square_rows),
         "paypal": to_csv(paypal_rows),
+        "bank": to_csv(bank_csv_rows),
     }
 
 

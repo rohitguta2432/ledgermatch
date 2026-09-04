@@ -1,4 +1,4 @@
-"""LedgerMatch API — reconcile store orders against processor payouts."""
+"""LedgerMatch API — reconcile store orders against processor payments, and processor payouts against the bank."""
 
 from __future__ import annotations
 
@@ -8,8 +8,9 @@ from fastapi.middleware.cors import CORSMiddleware
 import sample_data
 from matcher import reconcile
 from normalize import PARSERS, detect_source
+from payouts import EventLog, reconcile_payouts
 
-app = FastAPI(title="LedgerMatch", version="0.1.0")
+app = FastAPI(title="LedgerMatch", version="0.2.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -18,13 +19,34 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Single-workspace in-memory state (v0.1 — one merchant, one session)
-STATE: dict = {"orders": [], "payments": [], "files": []}
+# Single-workspace in-memory state (one merchant, one session)
+STATE: dict = {"orders": [], "payments": [], "bank": [], "files": [], "events": []}
+
+SEVERITY_RANK = {"high": 0, "medium": 1, "low": 2}
+
+
+def _clear() -> None:
+    for key in ("orders", "payments", "bank", "files", "events"):
+        STATE[key] = []
 
 
 def _current_report() -> dict:
-    report = reconcile(STATE["orders"], STATE["payments"])
+    log = EventLog()
+    log("run_start", orders=len(STATE["orders"]), payments=len(STATE["payments"]),
+        bank=len(STATE["bank"]), files=[f["filename"] for f in STATE["files"]])
+    report = reconcile(STATE["orders"], STATE["payments"], emit=log)
+    report["payouts"] = []
+    if STATE["bank"]:
+        payouts = reconcile_payouts(STATE["payments"], STATE["bank"], emit=log)
+        report["payouts"] = payouts["payouts"]
+        report["summary"].update(payouts["summary"])
+        report["exceptions"] = sorted(
+            report["exceptions"] + payouts["exceptions"],
+            key=lambda e: (SEVERITY_RANK[e["severity"]], -e["amount"]),
+        )
+        report["summary"]["exceptions"] = len(report["exceptions"])
     report["files"] = STATE["files"]
+    STATE["events"] = log.events
     return report
 
 
@@ -40,11 +62,13 @@ async def upload(file: UploadFile = File(...), source: str = Form("")) -> dict:
     if resolved not in PARSERS:
         raise HTTPException(
             status_code=422,
-            detail="Could not detect the source. Pass source=stripe|square|paypal|orders.",
+            detail="Could not detect the source. Pass source=stripe|square|paypal|orders|bank.",
         )
     parsed = PARSERS[resolved](text)
     if resolved == "orders":
-        STATE["orders"] = [o for o in STATE["orders"] if True] + parsed
+        STATE["orders"].extend(parsed)
+    elif resolved == "bank":
+        STATE["bank"].extend(parsed)
     else:
         STATE["payments"].extend(parsed)
     STATE["files"].append({
@@ -58,9 +82,7 @@ async def upload(file: UploadFile = File(...), source: str = Form("")) -> dict:
 @app.post("/api/demo")
 def load_demo() -> dict:
     """Load the bundled sample dataset (used by the landing demo button)."""
-    STATE["orders"] = []
-    STATE["payments"] = []
-    STATE["files"] = []
+    _clear()
     samples = sample_data.generate()
     STATE["orders"] = PARSERS["orders"](samples["orders"])
     for source in ("stripe", "square", "paypal"):
@@ -75,6 +97,8 @@ def load_demo() -> dict:
         "source": "orders",
         "rows": len(STATE["orders"]),
     })
+    STATE["bank"] = PARSERS["bank"](samples["bank"])
+    STATE["files"].append({"filename": "bank.csv", "source": "bank", "rows": len(STATE["bank"])})
     return _current_report()
 
 
@@ -83,9 +107,13 @@ def report() -> dict:
     return _current_report()
 
 
+@app.get("/api/events")
+def events() -> list[dict]:
+    """The last run, as the engine emitted it (millisecond timestamps). Feeds the console replay."""
+    return STATE["events"]
+
+
 @app.post("/api/reset")
 def reset() -> dict:
-    STATE["orders"] = []
-    STATE["payments"] = []
-    STATE["files"] = []
+    _clear()
     return {"ok": True}
